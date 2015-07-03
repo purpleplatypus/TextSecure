@@ -20,4 +20,3 @@ signing.properties
 library/lib/
 library/obj/
 ffpr
-test/androidTestEspresso/res/values/arrays.xml

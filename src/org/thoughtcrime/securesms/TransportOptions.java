@@ -82,27 +82,31 @@ public class TransportOptions {
   }
 
   private List<TransportOption> initializeAvailableTransports(boolean isMediaMessage) {
-    List<TransportOption> results = new LinkedList<>();
+    List<TransportOption> results          = new LinkedList<>();
+    int[]                 attributes       = new int[]{R.attr.conversation_transport_sms_indicator,
+                                                       R.attr.conversation_transport_push_indicator};
+    TypedArray            iconArray        = context.obtainStyledAttributes(attributes);
+    int                   smsIconResource  = iconArray.getResourceId(0, -1);
+    int                   pushIconResource = iconArray.getResourceId(1, -1);
 
     if (isMediaMessage) {
-      results.add(new TransportOption(Type.SMS, R.drawable.ic_send_sms_white_24dp,
-                                      context.getResources().getColor(R.color.grey_600),
+      results.add(new TransportOption(Type.SMS, smsIconResource,
                                       context.getString(R.string.ConversationActivity_transport_insecure_mms),
                                       context.getString(R.string.conversation_activity__type_message_mms_insecure),
                                       new MmsCharacterCalculator()));
     } else {
-      results.add(new TransportOption(Type.SMS, R.drawable.ic_send_sms_white_24dp,
-                                      context.getResources().getColor(R.color.grey_600),
+      results.add(new TransportOption(Type.SMS, smsIconResource,
                                       context.getString(R.string.ConversationActivity_transport_insecure_sms),
                                       context.getString(R.string.conversation_activity__type_message_sms_insecure),
                                       new SmsCharacterCalculator()));
     }
 
-    results.add(new TransportOption(Type.TEXTSECURE, R.drawable.ic_send_push_white_24dp,
-                                    context.getResources().getColor(R.color.textsecure_primary),
+    results.add(new TransportOption(Type.TEXTSECURE, pushIconResource,
                                     context.getString(R.string.ConversationActivity_transport_textsecure),
                                     context.getString(R.string.conversation_activity__type_message_push),
                                     new PushCharacterCalculator()));
+
+    iconArray.recycle();
 
     return results;
   }

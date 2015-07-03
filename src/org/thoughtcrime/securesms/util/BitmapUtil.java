@@ -3,7 +3,6 @@ package org.thoughtcrime.securesms.util;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
-import android.graphics.Bitmap.Config;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -134,12 +133,17 @@ public class BitmapUtil {
     final int imageWidth  = options.outWidth;
     final int imageHeight = options.outHeight;
 
-    options.inSampleSize       = getScaleFactor(imageWidth, imageHeight, maxWidth, maxHeight, constrainedMemory);
-    options.inJustDecodeBounds = false;
-    options.inPreferredConfig  = constrainedMemory ? Config.RGB_565 : Config.ARGB_8888;
+    int scaler = 1;
+    int scaleFactor = (constrainedMemory ? 1 : 2);
+    while ((imageWidth / scaler / scaleFactor >= maxWidth) && (imageHeight / scaler / scaleFactor >= maxHeight)) {
+      scaler *= 2;
+    }
 
-    InputStream is             = new BufferedInputStream(data);
-    Bitmap      roughThumbnail = BitmapFactory.decodeStream(is, null, options);
+    options.inSampleSize       = scaler;
+    options.inJustDecodeBounds = false;
+
+    BufferedInputStream is = new BufferedInputStream(data);
+    Bitmap roughThumbnail  = BitmapFactory.decodeStream(is, null, options);
     try {
       is.close();
     } catch (IOException ioe) {
@@ -183,20 +187,6 @@ public class BitmapUtil {
     } else {
       return roughThumbnail;
     }
-  }
-
-  @VisibleForTesting static int getScaleFactor(int inWidth, int inHeight,
-                                               int maxWidth, int maxHeight,
-                                               boolean constrained)
-  {
-    int scaler = 1;
-    while (!constrained && ((inWidth / scaler / 2 >= maxWidth) && (inHeight / scaler / 2 >= maxHeight))) {
-      scaler *= 2;
-    }
-    while (constrained && ((inWidth / scaler > maxWidth) || (inHeight / scaler > maxHeight))) {
-      scaler *= 2;
-    }
-    return scaler;
   }
 
   private static Bitmap fixOrientation(Bitmap bitmap, InputStream orientationStream) {

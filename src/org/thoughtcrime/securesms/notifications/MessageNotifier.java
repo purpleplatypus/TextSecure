@@ -31,7 +31,6 @@ import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
-import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationCompat.Action;
 import android.support.v4.app.NotificationCompat.BigTextStyle;
@@ -46,14 +45,11 @@ import android.util.Log;
 import org.thoughtcrime.securesms.ConversationActivity;
 import org.thoughtcrime.securesms.ConversationListActivity;
 import org.thoughtcrime.securesms.R;
-import org.thoughtcrime.securesms.contacts.avatars.ContactColors;
 import org.thoughtcrime.securesms.crypto.MasterSecret;
 import org.thoughtcrime.securesms.database.DatabaseFactory;
 import org.thoughtcrime.securesms.database.MmsSmsDatabase;
 import org.thoughtcrime.securesms.database.PushDatabase;
-import org.thoughtcrime.securesms.database.RecipientPreferenceDatabase.VibrateState;
 import org.thoughtcrime.securesms.database.SmsDatabase;
-import org.thoughtcrime.securesms.database.ThreadDatabase;
 import org.thoughtcrime.securesms.database.model.MessageRecord;
 import org.thoughtcrime.securesms.recipients.Recipient;
 import org.thoughtcrime.securesms.recipients.RecipientFactory;
@@ -92,9 +88,10 @@ public class MessageNotifier {
 
   public static void notifyMessageDeliveryFailed(Context context, Recipients recipients, long threadId) {
     if (visibleThread == threadId) {
-      sendInThreadNotification(context, recipients);
+      sendInThreadNotification(context);
     } else {
       Intent intent = new Intent(context, ConversationActivity.class);
+      intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
       intent.putExtra("recipients", recipients.getIds());
       intent.putExtra("thread_id", threadId);
       intent.setData((Uri.parse("custom://"+System.currentTimeMillis())));
@@ -108,7 +105,7 @@ public class MessageNotifier {
       builder.setTicker(context.getString(R.string.MessageNotifier_error_delivering_message));
       builder.setContentIntent(PendingIntent.getActivity(context, 0, intent, 0));
       builder.setAutoCancel(true);
-      setNotificationAlarms(context, builder, true, null, VibrateState.DEFAULT);
+      setNotificationAlarms(context, builder, true);
 
       ((NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE))
         .notify((int)threadId, builder.build());
@@ -124,20 +121,13 @@ public class MessageNotifier {
   }
 
   public static void updateNotification(Context context, MasterSecret masterSecret, long threadId) {
-    Recipients recipients = DatabaseFactory.getThreadDatabase(context)
-                                           .getRecipientsForThreadId(threadId);
-
-    if (!TextSecurePreferences.isNotificationsEnabled(context) ||
-        (recipients != null && recipients.isMuted()))
-    {
+    if (!TextSecurePreferences.isNotificationsEnabled(context)) {
       return;
     }
 
-
     if (visibleThread == threadId) {
-      ThreadDatabase threads = DatabaseFactory.getThreadDatabase(context);
-      threads.setRead(threadId);
-      sendInThreadNotification(context, threads.getRecipientsForThreadId(threadId));
+      DatabaseFactory.getThreadDatabase(context).setRead(threadId);
+      sendInThreadNotification(context);
     } else {
       updateNotification(context, masterSecret, true, 0);
     }
@@ -193,10 +183,8 @@ public class MessageNotifier {
     List<NotificationItem>     notifications       = notificationState.getNotifications();
     NotificationCompat.Builder builder             = new NotificationCompat.Builder(context);
     Recipient                  recipient           = notifications.get(0).getIndividualRecipient();
-    Recipients                 recipients          = notifications.get(0).getRecipients();
+    Drawable                   recipientPhoto      = recipient.getContactPhoto();
     int                        largeIconTargetSize = context.getResources().getDimensionPixelSize(R.dimen.contact_photo_target_size);
-    Drawable                   recipientPhoto      = recipient.getContactPhoto().asDrawable(context, recipients == null ? ContactColors.UNKNOWN_COLOR.toConversationColor(context) :
-                                                                                                     recipients.getColor().toConversationColor(context));
 
     if (recipientPhoto != null) {
       Bitmap recipientPhotoBitmap = BitmapUtil.createFromDrawable(recipientPhoto, largeIconTargetSize, largeIconTargetSize);
@@ -220,10 +208,9 @@ public class MessageNotifier {
 
     if (masterSecret != null) {
       Action markAsReadAction = new Action(R.drawable.check,
-                                           context.getString(R.string.MessageNotifier_mark_read),
+                                           context.getString(R.string.MessageNotifier_mark_as_read),
                                            notificationState.getMarkAsReadIntent(context, masterSecret));
       builder.addAction(markAsReadAction);
-      builder.addAction(new Action(R.drawable.ic_reply_white_36dp, context.getString(R.string.MessageNotifier_reply), notifications.get(0).getReplyIntent(context)));
       builder.extend(new NotificationCompat.WearableExtender().addAction(markAsReadAction));
     }
 
@@ -238,9 +225,7 @@ public class MessageNotifier {
 
     builder.setStyle(new BigTextStyle().bigText(content));
 
-    setNotificationAlarms(context, builder, signal,
-                          notificationState.getRingtone(),
-                          notificationState.getVibrate());
+    setNotificationAlarms(context, builder, signal);
 
     if (signal) {
       builder.setTicker(notifications.get(0).getTickerText());
@@ -298,9 +283,7 @@ public class MessageNotifier {
 
     builder.setStyle(style);
 
-    setNotificationAlarms(context, builder, signal,
-                          notificationState.getRingtone(),
-                          notificationState.getVibrate());
+    setNotificationAlarms(context, builder, signal);
 
     if (signal) {
       builder.setTicker(notifications.get(0).getTickerText());
@@ -310,27 +293,23 @@ public class MessageNotifier {
       .notify(NOTIFICATION_ID, builder.build());
   }
 
-  private static void sendInThreadNotification(Context context, Recipients recipients) {
+  private static void sendInThreadNotification(Context context) {
     try {
       if (!TextSecurePreferences.isInThreadNotifications(context)) {
         return;
       }
 
-      Uri uri = recipients != null ? recipients.getRingtone() : null;
+      String ringtone = TextSecurePreferences.getNotificationRingtone(context);
 
-      if (uri == null) {
-        String ringtone = TextSecurePreferences.getNotificationRingtone(context);
-
-        if (ringtone == null) {
-          Log.w(TAG, "ringtone preference was null.");
-          return;
-        } else {
-          uri = Uri.parse(ringtone);
-        }
+      if (ringtone == null) {
+        Log.w(TAG, "ringtone preference was null.");
+        return;
       }
 
+      Uri uri = Uri.parse(ringtone);
+
       if (uri == null) {
-        Log.w(TAG, "couldn't parse ringtone uri " + TextSecurePreferences.getNotificationRingtone(context));
+        Log.w(TAG, "couldn't parse ringtone uri " + ringtone);
         return;
       }
 
@@ -379,9 +358,7 @@ public class MessageNotifier {
         SpannableString body       = new SpannableString(context.getString(R.string.MessageNotifier_encrypted_message));
         body.setSpan(new StyleSpan(android.graphics.Typeface.ITALIC), 0, body.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
-        if (!recipients.isMuted()) {
-          notificationState.addNotification(new NotificationItem(recipient, recipients, null, threadId, body, null, 0));
-        }
+        notificationState.addNotification(new NotificationItem(recipient, recipients, null, threadId, body, null, 0));
       }
     } finally {
       if (reader != null)
@@ -426,9 +403,7 @@ public class MessageNotifier {
         body = SpanUtil.italic(message, italicLength);
       }
 
-      if (threadRecipients == null || !threadRecipients.isMuted()) {
-        notificationState.addNotification(new NotificationItem(recipient, recipients, threadRecipients, threadId, body, image, timestamp));
-      }
+      notificationState.addNotification(new NotificationItem(recipient, recipients, threadRecipients, threadId, body, image, timestamp));
     }
 
     reader.close();
@@ -437,23 +412,18 @@ public class MessageNotifier {
 
   private static void setNotificationAlarms(Context context,
                                             NotificationCompat.Builder builder,
-                                            boolean signal,
-                                            @Nullable Uri ringtone,
-                                            VibrateState vibrate)
-
+                                            boolean signal)
   {
-    String defaultRingtoneName   = TextSecurePreferences.getNotificationRingtone(context);
-    boolean defaultVibrate       = TextSecurePreferences.isNotificationVibrateEnabled(context);
+    String ringtone              = TextSecurePreferences.getNotificationRingtone(context);
+    boolean vibrate              = TextSecurePreferences.isNotificationVibrateEnabled(context);
     String ledColor              = TextSecurePreferences.getNotificationLedColor(context);
     String ledBlinkPattern       = TextSecurePreferences.getNotificationLedPattern(context);
     String ledBlinkPatternCustom = TextSecurePreferences.getNotificationLedPatternCustom(context);
     String[] blinkPatternArray   = parseBlinkPattern(ledBlinkPattern, ledBlinkPatternCustom);
 
-    if      (signal && ringtone != null)                        builder.setSound(ringtone);
-    else if (signal && !TextUtils.isEmpty(defaultRingtoneName)) builder.setSound(Uri.parse(defaultRingtoneName));
-    else                                                        builder.setSound(null);
+    builder.setSound(TextUtils.isEmpty(ringtone) || !signal ? null : Uri.parse(ringtone));
 
-    if (signal && (vibrate == VibrateState.ENABLED || (vibrate == VibrateState.DEFAULT && defaultVibrate))) {
+    if (signal && vibrate) {
       builder.setDefaults(Notification.DEFAULT_VIBRATE);
     }
 

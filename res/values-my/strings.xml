@@ -17,7 +17,6 @@
   <string name="AttachmentTypeSelectorAdapter_picture">ပုံ</string>
   <string name="AttachmentTypeSelectorAdapter_video">ဗွီဒီယို</string>
   <string name="AttachmentTypeSelectorAdapter_audio">အသံ</string>
-  <!--BlockedContactsActivity-->
   <!--ConfirmIdentityDialog-->
   <!--ConversationItem-->
   <string name="ConversationItem_message_size_d_kb">စာတိုအရွယ်အစား: %d KB</string>
@@ -35,7 +34,6 @@
   <!--ConversationFragment-->
   <string name="ConversationFragment_message_details">စာတို အသေးစိတ်အချက်အလက်များ</string>
   <string name="ConversationFragment_success_exclamation">အောင်မြင်!</string>
-  <!--ConversationListActivity-->
   <!--ConversationListFragment-->
   <string name="ConversationListFragment_delete_threads_question">စကားဝိုင်းကိုဖျက်မည်လား</string>
   <string name="ConversationListFragment_are_you_sure_you_wish_to_delete_all_selected_conversation_threads">စကားဝိုင်းတွင်စကားစမည်ပြောထားသည်များကိုဖျက်မည်မှာသေချာပြီလား</string>
@@ -45,8 +43,6 @@
   <string name="ConversationListItem_key_exchange_message">ကီးပြောင်းလဲခြင်းစာတို...</string>
   <!--CustomDefaultPreference-->
   <!--DateUtils-->
-  <!--DeviceListActivity-->
-  <!--DeviceListItem-->
   <!--ShareActivity-->
   <!--ExportFragment-->
   <string name="ExportFragment_export">ထုတ်ယူ</string>
@@ -73,7 +69,7 @@
   <!--PassphrasePromptActivity-->
   <!--PlayServicesProblemFragment-->
   <!--RatingManager-->
-  <!--RecipientPreferencesActivity-->
+  <!--ReceiveKeyActivity-->
   <!--RegistrationActivity-->
   <string name="RegistrationActivity_continue">ရှေ့ဆက်</string>
   <!--RegistrationProblemsActivity-->
@@ -116,7 +112,6 @@
   <string name="MmsMessageRecord_decrypting_mms_please_wait">MMSမှဝှက်စာ ဖော်နေသည်၊ ခေတ္တစောင့်ပါ...</string>
   <string name="MmsMessageRecord_bad_encrypted_mms_message">ဝှက်ထားမှုလွဲနေသော MMS စာသား....</string>
   <string name="MmsMessageRecord_mms_message_encrypted_for_non_existing_session">MMS စာသားများကို နဂိုမရှိသောဆက်ရှင်အတွက် ဝှက်သိမ်းလိုက်ပါသည်...</string>
-  <!--MuteDialog-->
   <!--ApplicationMigrationService-->
   <string name="ApplicationMigrationService_import_in_progress">သွင်းယူနေ</string>
   <!--KeyCachingService-->
@@ -136,10 +131,8 @@
   <!--single_contact_selection_activity-->
   <!--ContactSelectionListFragment-->
   <string name="ContactSelectionlistFragment_select_for">အတွက်　ရွေးချယ်ပါ</string>
-  <!--blocked_contacts_fragment-->
   <!--contact_selection_recent_activity-->
   <string name="contact_selection_recent_activity__no_recent_calls">မကြာသေးမှီကခေါ်ဆိုထားမှုများမရှိ</string>
-  <!--conversation_title_view-->
   <!--conversation_activity-->
   <string name="conversation_activity__send">ပို့</string>
   <string name="conversation_activity__remove">ဖယ်ပစ်</string>
@@ -153,7 +146,6 @@
   <!--conversation_fragment_cab-->
   <!--country_selection_fragment-->
   <string name="country_selection_fragment__search">ရှာရန်</string>
-  <!--device_list_fragment-->
   <!--log_submit_activity-->
   <!--database_migration_activity-->
   <string name="database_migration_activity__would_you_like_to_import_your_existing_text_messages">အသင်၏ ရှိရင်းစွဲ စာသားများကို Textsecure၏ ဝှက်သိမ်းထားသော ဒေတာဘေ့စ်ထဲသို့ တင်သွင်းမည်လား။</string>
@@ -170,8 +162,7 @@
   <!--prompt_passphrase_activity-->
   <string name="prompt_passphrase_activity__unlock">ပိတ်ထားသည်ကိုဖွင့်</string>
   <!--prompt_mms_activity-->
-  <!--recipient_preferences_activity-->
-  <!--recipient_preferences-->
+  <!--receive_key_dialog-->
   <!--registration_activity-->
   <!--registration_problems-->
   <!--registration_progress_activity-->
@@ -239,12 +230,9 @@
   <!--conversation_list_fragment-->
   <!--conversation_secure_verified-->
   <string name="conversation_secure_verified__menu_security">လုံခြုံရေး</string>
-  <!--conversation_muted-->
-  <!--conversation_unmuted-->
   <!--conversation-->
   <string name="conversation__menu_add_attachment">ပူးတွဲမှုအားပေါင်းထည့်</string>
   <string name="conversation__menu_delete_thread">စာတွဲကိုဖျက်ပါ</string>
-  <!--conversation_popup-->
   <!--conversation_callable-->
   <!--conversation_group_options-->
   <string name="convesation_group_options__recipients_list">လက်ခံမည့်သူစာရင်း</string>

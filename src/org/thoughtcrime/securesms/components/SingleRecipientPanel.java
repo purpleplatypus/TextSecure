@@ -130,7 +130,7 @@ public class SingleRecipientPanel extends RelativeLayout {
     try {
       recipients = getRecipients();
     } catch (RecipientFormattingException e) {
-      recipients = RecipientFactory.getRecipientsFor(getContext(), new LinkedList<Recipient>(), true);
+      recipients = new Recipients( new LinkedList<Recipient>() );
     }
 
     recipientsText.setAdapter(new RecipientsAdapter(this.getContext()));

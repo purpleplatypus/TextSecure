@@ -4,14 +4,11 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.preference.CheckBoxPreference;
 import android.preference.Preference;
 import android.provider.ContactsContract;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.v4.preference.PreferenceFragment;
 import android.util.Log;
 import android.widget.Toast;
@@ -54,9 +51,8 @@ public class AdvancedPreferenceFragment extends PreferenceFragment {
     initializePushMessagingToggle();
     initializeIdentitySelection();
 
-    Preference submitDebugLog = this.findPreference(SUBMIT_DEBUG_LOG_PREF);
-    submitDebugLog.setOnPreferenceClickListener(new SubmitDebugLogListener());
-    submitDebugLog.setSummary(getVersion(getActivity()));
+    this.findPreference(SUBMIT_DEBUG_LOG_PREF)
+      .setOnPreferenceClickListener(new SubmitDebugLogListener());
   }
 
   @Override
@@ -101,20 +97,6 @@ public class AdvancedPreferenceFragment extends PreferenceFragment {
     }
   }
 
-  private @NonNull String getVersion(@Nullable Context context) {
-    try {
-      if (context == null) return "";
-
-      String app     = context.getString(R.string.app_name);
-      String version = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName;
-
-      return String.format("%s %s", app, version);
-    } catch (PackageManager.NameNotFoundException e) {
-      Log.w(TAG, e);
-      return context.getString(R.string.app_name);
-    }
-  }
-
   private class IdentityPreferenceClickListener implements Preference.OnPreferenceClickListener {
     @Override
     public boolean onPreferenceClick(Preference preference) {
@@ -151,7 +133,7 @@ public class AdvancedPreferenceFragment extends PreferenceFragment {
       private final CheckBoxPreference checkBoxPreference;
 
       public DisablePushMessagesTask(final CheckBoxPreference checkBoxPreference) {
-        super(getActivity(), R.string.ApplicationPreferencesActivity_unregistering, R.string.ApplicationPreferencesActivity_unregistering_from_textsecure_messages);
+        super(getActivity(), R.string.ApplicationPreferencesActivity_unregistering, R.string.ApplicationPreferencesActivity_unregistering_for_data_based_communication);
         this.checkBoxPreference = checkBoxPreference;
       }
 
@@ -196,8 +178,8 @@ public class AdvancedPreferenceFragment extends PreferenceFragment {
       if (((CheckBoxPreference)preference).isChecked()) {
         AlertDialogWrapper.Builder builder = new AlertDialogWrapper.Builder(getActivity());
         builder.setIconAttribute(R.attr.dialog_info_icon);
-        builder.setTitle(R.string.ApplicationPreferencesActivity_disable_textsecure_messages);
-        builder.setMessage(R.string.ApplicationPreferencesActivity_this_will_disable_textsecure_messages);
+        builder.setTitle(R.string.ApplicationPreferencesActivity_disable_push_messages);
+        builder.setMessage(R.string.ApplicationPreferencesActivity_this_will_disable_push_messages);
         builder.setNegativeButton(android.R.string.cancel, null);
         builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
           @Override

@@ -44,12 +44,10 @@ import com.google.protobuf.ByteString;
 import com.soundcloud.android.crop.Crop;
 
 import org.thoughtcrime.securesms.components.PushRecipientsPanel;
+import org.thoughtcrime.securesms.contacts.ContactAccessor;
 import org.thoughtcrime.securesms.contacts.RecipientsEditor;
-import org.thoughtcrime.securesms.crypto.MasterSecret;
 import org.thoughtcrime.securesms.database.DatabaseFactory;
 import org.thoughtcrime.securesms.database.GroupDatabase;
-import org.thoughtcrime.securesms.database.NotInDirectoryException;
-import org.thoughtcrime.securesms.database.TextSecureDirectory;
 import org.thoughtcrime.securesms.database.ThreadDatabase;
 import org.thoughtcrime.securesms.mms.OutgoingGroupMediaMessage;
 import org.thoughtcrime.securesms.recipients.Recipient;
@@ -65,8 +63,10 @@ import org.thoughtcrime.securesms.util.ProgressDialogAsyncTask;
 import org.thoughtcrime.securesms.util.SelectedRecipientsAdapter;
 import org.thoughtcrime.securesms.util.TextSecurePreferences;
 import org.thoughtcrime.securesms.util.Util;
+import org.thoughtcrime.securesms.crypto.MasterSecret;
+import org.thoughtcrime.securesms.database.TextSecureDirectory;
+import org.thoughtcrime.securesms.database.NotInDirectoryException;
 import org.whispersystems.textsecure.api.util.InvalidNumberException;
-import org.whispersystems.textsecure.internal.push.TextSecureProtos.GroupContext;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -80,6 +80,8 @@ import java.util.Set;
 
 import ws.com.google.android.mms.MmsException;
 
+import static org.thoughtcrime.securesms.contacts.ContactAccessor.ContactData;
+import static org.whispersystems.textsecure.internal.push.PushMessageProtos.PushMessageContent.GroupContext;
 
 /**
  * Activity to create and update groups
@@ -463,7 +465,7 @@ public class GroupCreateActivity extends PassphraseRequiredActionBarActivity {
   }
 
   private long handleCreateMmsGroup(Set<Recipient> members) {
-    Recipients recipients = RecipientFactory.getRecipientsFor(this, new LinkedList<>(members), false);
+    Recipients recipients = new Recipients(new LinkedList<Recipient>(members));
     return DatabaseFactory.getThreadDatabase(this)
                           .getThreadIdFor(recipients,
                                           ThreadDatabase.DistributionTypes.CONVERSATION);
@@ -530,7 +532,7 @@ public class GroupCreateActivity extends PassphraseRequiredActionBarActivity {
         intent.putExtra(ConversationActivity.DISTRIBUTION_TYPE_EXTRA, ThreadDatabase.DistributionTypes.DEFAULT);
 
         ArrayList<Recipient> selectedContactsList = setToArrayList(selectedContacts);
-        intent.putExtra(ConversationActivity.RECIPIENTS_EXTRA, RecipientFactory.getRecipientsFor(GroupCreateActivity.this, selectedContactsList, true).getIds());
+        intent.putExtra(ConversationActivity.RECIPIENTS_EXTRA, new Recipients(selectedContactsList).getIds());
         startActivity(intent);
         finish();
       } else {

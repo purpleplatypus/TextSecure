@@ -106,7 +106,6 @@ public class ConversationListActivity extends PassphraseRequiredActionBarActivit
 
   private void initializeSearch(MenuItem searchViewItem) {
     SearchView searchView = (SearchView)MenuItemCompat.getActionView(searchViewItem);
-    searchView.setQueryHint(getString(R.string.ConversationListActivity_search));
     searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
       @Override
       public boolean onQueryTextSubmit(String query) {
@@ -174,7 +173,6 @@ public class ConversationListActivity extends PassphraseRequiredActionBarActivit
     intent.putExtra(ConversationActivity.DISTRIBUTION_TYPE_EXTRA, distributionType);
 
     startActivity(intent);
-    overridePendingTransition(R.anim.slide_from_right, R.anim.fade_scale_out);
   }
 
   private void handleDisplaySettings() {

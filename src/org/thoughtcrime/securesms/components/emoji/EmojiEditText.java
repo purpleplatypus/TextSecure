@@ -1,42 +1,39 @@
 package org.thoughtcrime.securesms.components.emoji;
 
 import android.content.Context;
-import android.graphics.drawable.Drawable;
-import android.support.annotation.NonNull;
 import android.support.v7.widget.AppCompatEditText;
-import android.text.InputFilter;
 import android.util.AttributeSet;
-
-import org.thoughtcrime.securesms.R;
-import org.thoughtcrime.securesms.components.emoji.EmojiProvider.EmojiDrawable;
 
 
 public class EmojiEditText extends AppCompatEditText {
-  private static final String TAG = EmojiEditText.class.getSimpleName();
-
   public EmojiEditText(Context context) {
-    this(context, null);
+    super(context);
   }
 
   public EmojiEditText(Context context, AttributeSet attrs) {
-    this(context, attrs, R.attr.editTextStyle);
+    super(context, attrs);
   }
 
-  public EmojiEditText(Context context, AttributeSet attrs, int defStyleAttr) {
+  public EmojiEditText(Context context, AttributeSet attrs,
+                       int defStyleAttr)
+  {
     super(context, attrs, defStyleAttr);
-    setFilters(new InputFilter[]{ new EmojiFilter(this) });
   }
 
-  public void insertEmoji(String emoji) {
+  @Override public void setText(CharSequence text, BufferType type) {
+    super.setText(EmojiProvider.getInstance(getContext()).emojify(text, EmojiProvider.EMOJI_SMALL, new PostInvalidateCallback(this)),
+                  BufferType.SPANNABLE);
+  }
+
+  public void insertEmoji(int codePoint) {
     final int          start = getSelectionStart();
     final int          end   = getSelectionEnd();
+    final char[]       chars = Character.toChars(codePoint);
+    final CharSequence text  = EmojiProvider.getInstance(getContext()).emojify(new String(chars),
+                                                                               EmojiProvider.EMOJI_SMALL,
+                                                                               new PostInvalidateCallback(this));
 
-    getText().replace(Math.min(start, end), Math.max(start, end), emoji);
-    setSelection(end + emoji.length());
-  }
-
-  @Override public void invalidateDrawable(@NonNull Drawable drawable) {
-    if (drawable instanceof EmojiDrawable) invalidate();
-    else                                   super.invalidateDrawable(drawable);
+    getText().replace(Math.min(start, end), Math.max(start, end), text);
+    setSelection(end + chars.length);
   }
 }

@@ -345,7 +345,7 @@ public class MmsDatabase extends MessagingDatabase {
                       ? Util.toIsoString(notification.getFrom().getTextString())
                       : "";
     Recipients recipients = RecipientFactory.getRecipientsFromString(context, fromString, false);
-    if (recipients.isEmpty()) recipients = RecipientFactory.getRecipientsFor(context, Recipient.getUnknownRecipient(), false);
+    if (recipients.isEmpty()) recipients = new Recipients(Recipient.getUnknownRecipient(context));
     return DatabaseFactory.getThreadDatabase(context).getThreadIdFor(recipients);
   }
 
@@ -378,7 +378,7 @@ public class MmsDatabase extends MessagingDatabase {
   }
 
   public void markAsForcedSms(long messageId) {
-    updateMailboxBitmask(messageId, Types.PUSH_MESSAGE_BIT, Types.MESSAGE_FORCE_SMS_BIT);
+    updateMailboxBitmask(messageId, 0, Types.MESSAGE_FORCE_SMS_BIT);
     notifyConversationListeners(getThreadIdForMessage(messageId));
   }
 
@@ -721,12 +721,6 @@ public class MmsDatabase extends MessagingDatabase {
     contentValues.put(DATE_RECEIVED, contentValues.getAsLong(DATE_SENT));
     contentValues.remove(ADDRESS);
 
-    if (sendRequest.getBody() != null) {
-      for (int i = 0; i < sendRequest.getBody().getPartsNum(); i++) {
-        sendRequest.getBody().getPart(i).setInProgress(true);
-      }
-    }
-
     long messageId = insertMediaMessage(masterSecret, sendRequest.getPduHeaders(),
                                         sendRequest.getBody(), contentValues);
     jobManager.add(new TrimThreadJob(context, threadId));
@@ -1060,13 +1054,13 @@ public class MmsDatabase extends MessagingDatabase {
 
     private Recipients getRecipientsFor(String address) {
       if (TextUtils.isEmpty(address) || address.equals("insert-address-token")) {
-        return RecipientFactory.getRecipientsFor(context, Recipient.getUnknownRecipient(), false);
+        return new Recipients(Recipient.getUnknownRecipient(context));
       }
 
       Recipients recipients =  RecipientFactory.getRecipientsFromString(context, address, false);
 
       if (recipients == null || recipients.isEmpty()) {
-        return RecipientFactory.getRecipientsFor(context, Recipient.getUnknownRecipient(), false);
+        return new Recipients(Recipient.getUnknownRecipient(context));
       }
 
       return recipients;

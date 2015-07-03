@@ -45,8 +45,6 @@ import android.util.Log;
 
 public class DecryptingPartInputStream extends FileInputStream {
 
-  private static final String TAG = DecryptingPartInputStream.class.getSimpleName();
-
   private static final int IV_LENGTH  = 16;
   private static final int MAC_LENGTH = 20;
 
@@ -70,12 +68,16 @@ public class DecryptingPartInputStream extends FileInputStream {
       totalDataSize = file.length() - cipher.getBlockSize() - mac.getMacLength();
       totalRead     = 0;
     } catch (InvalidKeyException ike) {
-      Log.w(TAG, ike);
+      Log.w("EncryptingPartInputStream", ike);
       throw new FileNotFoundException("Invalid key!");
-    } catch (NoSuchAlgorithmException | InvalidAlgorithmParameterException | NoSuchPaddingException e) {
+    } catch (NoSuchAlgorithmException e) {
+      throw new AssertionError(e);
+    } catch (InvalidAlgorithmParameterException e) {
+      throw new AssertionError(e);
+    } catch (NoSuchPaddingException e) {
       throw new AssertionError(e);
     } catch (IOException e) {
-      Log.w(TAG, e);
+      Log.w("EncryptingPartInputStream", e);
       throw new FileNotFoundException("IOException while reading IV!");
     }
   }
@@ -128,13 +130,13 @@ public class DecryptingPartInputStream extends FileInputStream {
       done = true;
       return flourish;
     } catch (IllegalBlockSizeException e) {
-      Log.w(TAG, e);
+      Log.w("EncryptingPartInputStream", e);
       throw new IOException("Illegal block size exception!");
     } catch (ShortBufferException e) {
-      Log.w(TAG, e);
+      Log.w("EncryptingPartInputStream", e);
       throw new IOException("Short buffer exception!");
     } catch (BadPaddingException e) {
-      Log.w(TAG, e);
+      Log.w("EncryptingPartInputStream", e);
       throw new IOException("Bad padding exception!");
     }
   }

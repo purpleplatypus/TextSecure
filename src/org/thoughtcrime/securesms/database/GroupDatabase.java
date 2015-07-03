@@ -87,15 +87,10 @@ public class GroupDatabase extends Database {
     return new Reader(cursor);
   }
 
-  public Reader getGroups() {
-    Cursor cursor = databaseHelper.getReadableDatabase().query(TABLE_NAME, null, null, null, null, null, null);
-    return new Reader(cursor);
-  }
-
   public Recipients getGroupMembers(byte[] groupId, boolean includeSelf) {
     String          localNumber = TextSecurePreferences.getLocalNumber(context);
     List<String>    members     = getCurrentMembers(groupId);
-    List<Recipient> recipients  = new LinkedList<>();
+    List<Recipient> recipients  = new LinkedList<Recipient>();
 
     for (String member : members) {
       if (!includeSelf && member.equals(localNumber))
@@ -105,7 +100,7 @@ public class GroupDatabase extends Database {
                                         .getRecipientsList());
     }
 
-    return RecipientFactory.getRecipientsFor(context, recipients, false);
+    return new Recipients(recipients);
   }
 
   public void create(byte[] groupId, String title, List<String> members,

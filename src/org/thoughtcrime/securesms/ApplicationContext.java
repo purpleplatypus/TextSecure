@@ -18,9 +18,6 @@ package org.thoughtcrime.securesms;
 
 import android.app.Application;
 import android.content.Context;
-import android.os.StrictMode;
-import android.os.StrictMode.ThreadPolicy;
-import android.os.StrictMode.VmPolicy;
 
 import org.thoughtcrime.securesms.crypto.PRNGFixes;
 import org.thoughtcrime.securesms.dependencies.AxolotlStorageModule;
@@ -36,6 +33,8 @@ import org.whispersystems.jobqueue.dependencies.DependencyInjector;
 import org.whispersystems.jobqueue.requirements.NetworkRequirementProvider;
 import org.whispersystems.libaxolotl.logging.AxolotlLoggerProvider;
 import org.whispersystems.libaxolotl.util.AndroidAxolotlLogger;
+
+import java.security.Security;
 
 import dagger.ObjectGraph;
 
@@ -58,8 +57,6 @@ public class ApplicationContext extends Application implements DependencyInjecto
 
   @Override
   public void onCreate() {
-    super.onCreate();
-    initializeDeveloperBuild();
     initializeRandomNumberFix();
     initializeLogging();
     initializeDependencyInjection();
@@ -76,16 +73,6 @@ public class ApplicationContext extends Application implements DependencyInjecto
 
   public JobManager getJobManager() {
     return jobManager;
-  }
-
-  private void initializeDeveloperBuild() {
-    if (BuildConfig.DEV_BUILD) {
-//      LeakCanary.install(this);
-      StrictMode.setThreadPolicy(new ThreadPolicy.Builder().detectAll()
-                                                           .penaltyLog()
-                                                           .build());
-      StrictMode.setVmPolicy(new VmPolicy.Builder().detectAll().penaltyLog().build());
-    }
   }
 
   private void initializeRandomNumberFix() {

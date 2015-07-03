@@ -13,6 +13,7 @@ import android.graphics.drawable.Drawable.Callback;
 import android.os.AsyncTask;
 import android.os.Build.VERSION;
 import android.os.Build.VERSION_CODES;
+import android.support.annotation.Nullable;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
 import android.util.Log;
@@ -23,6 +24,7 @@ import org.thoughtcrime.securesms.util.BitmapDecodingException;
 import org.thoughtcrime.securesms.util.BitmapUtil;
 import org.thoughtcrime.securesms.util.FutureTaskListener;
 import org.thoughtcrime.securesms.util.ListenableFutureTask;
+import org.thoughtcrime.securesms.util.ResUtil;
 import org.thoughtcrime.securesms.util.Util;
 
 import java.io.IOException;
@@ -45,10 +47,10 @@ public class EmojiProvider {
   private static final Pattern EMOJI_RANGE = Pattern.compile("[\\u20a0-\\u32ff\\ud83c\\udc00-\\ud83d\\udeff\\udbb9\\udce5-\\udbb9\\udcee]");
 
   public static final double EMOJI_FULL       = 1.00;
-  public static final double EMOJI_SMALL      = 0.60;
-  public static final int    EMOJI_RAW_HEIGHT = 96;
-  public static final int    EMOJI_RAW_WIDTH  = 102;
-  public static final int    EMOJI_VERT_PAD   = 6;
+  public static final double EMOJI_SMALL      = 0.50;
+  public static final int    EMOJI_RAW_HEIGHT = 128;
+  public static final int    EMOJI_RAW_WIDTH  = 136;
+  public static final int    EMOJI_VERT_PAD   = 8;
   public static final int    EMOJI_PER_ROW    = 15;
 
   private final Context context;
@@ -68,29 +70,29 @@ public class EmojiProvider {
   }
 
   private EmojiProvider(Context context) {
+    int[] pages = ResUtil.getResourceIds(context, R.array.emoji_categories);
+
     this.context     = context.getApplicationContext();
-    this.drawHeight  = Math.min(context.getResources().getDimension(R.dimen.emoji_drawer_size), EMOJI_RAW_HEIGHT);
-    double drawScale = drawHeight / EMOJI_RAW_HEIGHT;
-    this.drawWidth   = EMOJI_RAW_WIDTH * drawScale;
-    this.verticalPad = EMOJI_VERT_PAD * drawScale;
+    this.drawHeight  = context.getResources().getDimension(R.dimen.emoji_drawer_size);
+    this.drawWidth   = drawHeight * ((double)EMOJI_RAW_WIDTH) / EMOJI_RAW_HEIGHT;
+    this.verticalPad = EMOJI_VERT_PAD * drawHeight / EMOJI_RAW_HEIGHT;
     Log.w(TAG, "draw size: " + drawWidth + "x" + drawHeight);
-    for (EmojiPageModel page : EmojiPages.PAGES) {
-      if (page.hasSpriteMap()) {
-        final EmojiPageBitmap pageBitmap = new EmojiPageBitmap(page);
-        for (int i=0; i < page.getEmoji().length; i++) {
-          offsets.put(Character.codePointAt(page.getEmoji()[i], 0), new DrawInfo(pageBitmap, i));
-        }
+    for (int i = 0; i < pages.length; i++) {
+      final EmojiPageBitmap page = new EmojiPageBitmap(i);
+      final int[] codePoints = context.getResources().getIntArray(pages[i]);
+      for (int j = 0; j < codePoints.length; j++) {
+        offsets.put(codePoints[j], new DrawInfo(page, j));
       }
     }
   }
 
-  public Spannable emojify(CharSequence text, Callback callback) {
+  public CharSequence emojify(CharSequence text, double size, Callback callback) {
     Matcher                matches = EMOJI_RANGE.matcher(text);
     SpannableStringBuilder builder = new SpannableStringBuilder(text);
 
     while (matches.find()) {
       int codePoint = matches.group().codePointAt(0);
-      Drawable drawable = getEmojiDrawable(codePoint, EMOJI_SMALL);
+      Drawable drawable = getEmojiDrawable(codePoint, size);
       if (drawable != null) {
         builder.setSpan(new InvalidatingDrawableSpan(drawable, callback), matches.start(), matches.end(),
                         Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -105,9 +107,7 @@ public class EmojiProvider {
   }
 
   private Drawable getEmojiDrawable(DrawInfo drawInfo, double size) {
-    if (drawInfo == null)  {
-      return null;
-    }
+    if (drawInfo == null) return null;
 
     final EmojiDrawable drawable = new EmojiDrawable(drawInfo, drawWidth, drawHeight);
     drawable.setBounds(0, 0, (int)(drawWidth * size), (int)(drawHeight * size));
@@ -150,6 +150,7 @@ public class EmojiProvider {
     @Override
     public void draw(Canvas canvas) {
       if (bmp == null) {
+        Log.w(TAG, "no-op draw(" + info.page + ", " + info.index + ")");
         return;
       }
 
@@ -168,6 +169,7 @@ public class EmojiProvider {
     @TargetApi(VERSION_CODES.HONEYCOMB_MR1)
     public void setBitmap(Bitmap bitmap) {
       Util.assertMainThread();
+      Log.w(TAG, "setBitmap(" + info.page + ", " + info.index + ")");
       if (VERSION.SDK_INT < VERSION_CODES.HONEYCOMB_MR1 || bmp == null || !bmp.sameAs(bitmap)) {
         bmp = bitmap;
         invalidateSelf();
@@ -205,12 +207,12 @@ public class EmojiProvider {
   }
 
   private class EmojiPageBitmap {
-    private EmojiPageModel               model;
+    private int                          page;
     private SoftReference<Bitmap>        bitmapReference;
     private ListenableFutureTask<Bitmap> task;
 
-    public EmojiPageBitmap(EmojiPageModel model) {
-      this.model = model;
+    public EmojiPageBitmap(int page) {
+      this.page = page;
     }
 
     private ListenableFutureTask<Bitmap> get() {
@@ -224,7 +226,7 @@ public class EmojiProvider {
         Callable<Bitmap> callable = new Callable<Bitmap>() {
           @Override public Bitmap call() throws Exception {
             try {
-              Log.w(TAG, "loading page " + model.getSprite());
+              Log.w(TAG, "loading page " + page);
               return loadPage();
             } catch (IOException ioe) {
               Log.w(TAG, ioe);
@@ -251,24 +253,24 @@ public class EmojiProvider {
       if (bitmapReference != null && bitmapReference.get() != null) return bitmapReference.get();
 
       try {
-        final InputStream measureStream = context.getAssets().open(model.getSprite());
-        final InputStream bitmapStream  = context.getAssets().open(model.getSprite());
+        final String      file          = "emoji-" + page + ".png";
+        final InputStream measureStream = context.getAssets().open(file);
+        final InputStream bitmapStream  = context.getAssets().open(file);
         final Bitmap      bitmap        = BitmapUtil.createScaledBitmap(measureStream, bitmapStream, (float) drawHeight / (float) EMOJI_RAW_HEIGHT);
         bitmapReference = new SoftReference<>(bitmap);
-        Log.w(TAG, "onPageLoaded(" + model.getSprite() + ")");
+        Log.w(TAG, "onPageLoaded(" + page + ")");
         return bitmap;
       } catch (IOException ioe) {
         Log.w(TAG, ioe);
         throw ioe;
       } catch (BitmapDecodingException bde) {
-        Log.w(TAG, "page " + model + " failed.");
         Log.w(TAG, bde);
         throw new AssertionError("emoji sprite asset is corrupted or android decoding is broken");
       }
     }
 
     @Override public String toString() {
-      return model.getSprite();
+      return Integer.toString(page);
     }
   }
 }

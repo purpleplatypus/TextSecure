@@ -1,19 +1,22 @@
 package org.thoughtcrime.securesms.components.emoji;
 
 import android.content.Context;
+import android.os.Bundle;
+import android.support.annotation.ArrayRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v4.view.PagerAdapter;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentStatePagerAdapter;
 import android.support.v4.view.ViewPager;
-import android.util.AttributeSet;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ImageView.ScaleType;
-import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 
 import com.astuetz.PagerSlidingTabStrip;
@@ -22,13 +25,13 @@ import org.thoughtcrime.securesms.R;
 import org.thoughtcrime.securesms.components.KeyboardAwareLinearLayout;
 import org.thoughtcrime.securesms.components.RepeatableImageKey;
 import org.thoughtcrime.securesms.components.RepeatableImageKey.KeyEventListener;
-import org.thoughtcrime.securesms.components.emoji.EmojiPageView.EmojiSelectionListener;
+import org.thoughtcrime.securesms.components.emoji.EmojiPageFragment.EmojiSelectionListener;
 import org.thoughtcrime.securesms.util.ResUtil;
 
 import java.util.LinkedList;
 import java.util.List;
 
-public class EmojiDrawer extends KeyboardAwareLinearLayout {
+public class EmojiDrawer extends Fragment {
   private static final KeyEvent DELETE_KEY_EVENT = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL);
 
   private EmojiEditText             composeText;
@@ -38,30 +41,30 @@ public class EmojiDrawer extends KeyboardAwareLinearLayout {
   private PagerSlidingTabStrip      strip;
   private RecentEmojiPageModel      recentModel;
 
-  public EmojiDrawer(Context context) {
-    super(context);
-    init();
+  public static EmojiDrawer newInstance(@ArrayRes int categories, @ArrayRes int icons) {
+    final EmojiDrawer fragment = new EmojiDrawer();
+    final Bundle      args     = new Bundle();
+    args.putInt("categories", categories);
+    args.putInt("icons", icons);
+    fragment.setArguments(args);
+    return fragment;
   }
 
-  public EmojiDrawer(Context context, AttributeSet attrs) {
-    super(context, attrs);
-    init();
-  }
-
-  public EmojiDrawer(Context context, AttributeSet attrs, int defStyle) {
-    super(context, attrs, defStyle);
-    init();
+  public static EmojiDrawer newInstance() {
+    return newInstance(R.array.emoji_categories, R.array.emoji_category_icons);
   }
 
   public void setComposeEditText(EmojiEditText composeText) {
     this.composeText = composeText;
   }
 
-  private void init() {
-    final View v = LayoutInflater.from(getContext()).inflate(R.layout.emoji_drawer, this, true);
+  @Override
+  public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    final View v = inflater.inflate(R.layout.emoji_drawer, container, false);
     initializeResources(v);
-    initializePageModels();
+    initializePageModels(getArguments().getInt("categories"), getArguments().getInt("icons"));
     initializeEmojiGrid();
+    return v;
   }
 
   private void initializeResources(View v) {
@@ -87,7 +90,7 @@ public class EmojiDrawer extends KeyboardAwareLinearLayout {
   public void show() {
     int keyboardHeight = container.getKeyboardHeight();
     Log.w("EmojiDrawer", "setting emoji drawer to height " + keyboardHeight);
-    container.setLayoutParams(new LinearLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, keyboardHeight));
+    container.setLayoutParams(new FrameLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, keyboardHeight));
     container.requestLayout();
     container.setVisibility(View.VISIBLE);
   }
@@ -97,29 +100,34 @@ public class EmojiDrawer extends KeyboardAwareLinearLayout {
   }
 
   private void initializeEmojiGrid() {
-    pager.setAdapter(new EmojiPagerAdapter(getContext(),
+    pager.setAdapter(new EmojiPagerAdapter(getActivity(),
+                                           getFragmentManager(),
                                            models,
                                            new EmojiSelectionListener() {
-                                             @Override public void onEmojiSelected(String emoji) {
-                                               recentModel.onCodePointSelected(emoji);
-                                               composeText.insertEmoji(emoji);
+                                             @Override public void onEmojiSelected(int emojiCode) {
+                                               recentModel.onCodePointSelected(emojiCode);
+                                               composeText.insertEmoji(emojiCode);
                                              }
                                            }));
 
-    if (recentModel.getEmoji().length == 0) {
+    if (recentModel.getCodePoints().length == 0) {
       pager.setCurrentItem(1);
     }
     strip.setViewPager(pager);
   }
 
-  private void initializePageModels() {
+  private void initializePageModels(@ArrayRes int pagesRes, @ArrayRes int iconsRes) {
+    final int[] icons = ResUtil.getResourceIds(getActivity(), iconsRes);
+    final int[] pages = ResUtil.getResourceIds(getActivity(), pagesRes);
     this.models = new LinkedList<>();
-    this.recentModel = new RecentEmojiPageModel(getContext());
+    this.recentModel = new RecentEmojiPageModel(getActivity());
     this.models.add(recentModel);
-    this.models.addAll(EmojiPages.PAGES);
+    for (int i = 0; i < icons.length; i++) {
+      this.models.add(new StaticEmojiPageModel(icons[i], getResources().getIntArray(pages[i])));
+    }
   }
 
-  public static class EmojiPagerAdapter extends PagerAdapter
+  public static class EmojiPagerAdapter extends FragmentStatePagerAdapter
       implements PagerSlidingTabStrip.CustomTabProvider
   {
     private Context                context;
@@ -127,10 +135,11 @@ public class EmojiDrawer extends KeyboardAwareLinearLayout {
     private EmojiSelectionListener listener;
 
     public EmojiPagerAdapter(@NonNull Context context,
+                             @NonNull FragmentManager fm,
                              @NonNull List<EmojiPageModel> pages,
                              @Nullable EmojiSelectionListener listener)
     {
-      super();
+      super(fm);
       this.context  = context;
       this.pages    = pages;
       this.listener = listener;
@@ -141,32 +150,20 @@ public class EmojiDrawer extends KeyboardAwareLinearLayout {
       return pages.size();
     }
 
-    @Override public Object instantiateItem(ViewGroup container, int position) {
-      EmojiPageView page = new EmojiPageView(context);
-      page.setModel(pages.get(position));
-      page.setEmojiSelectedListener(listener);
-      container.addView(page);
-      return page;
-    }
-
-    @Override public void destroyItem(ViewGroup container, int position, Object object) {
-      container.removeView((View)object);
+    @Override public Fragment getItem(int i) {
+      return EmojiPageFragment.newInstance(pages.get(i), listener);
     }
 
     @Override public void setPrimaryItem(ViewGroup container, int position, Object object) {
-      EmojiPageView current = (EmojiPageView) object;
+      EmojiPageFragment current = (EmojiPageFragment) object;
       current.onSelected();
       super.setPrimaryItem(container, position, object);
-    }
-
-    @Override public boolean isViewFromObject(View view, Object object) {
-      return view == object;
     }
 
     @Override public View getCustomTabView(ViewGroup viewGroup, int i) {
       ImageView image = new ImageView(context);
       image.setScaleType(ScaleType.CENTER_INSIDE);
-      image.setImageResource(ResUtil.getDrawableRes(context, pages.get(i).getIconAttr()));
+      image.setImageResource(pages.get(i).getIconRes());
       return image;
     }
   }

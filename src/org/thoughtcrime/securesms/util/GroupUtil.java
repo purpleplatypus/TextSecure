@@ -9,7 +9,7 @@ import java.io.IOException;
 import java.util.List;
 
 import org.thoughtcrime.securesms.R;
-import static org.whispersystems.textsecure.internal.push.TextSecureProtos.GroupContext;
+import static org.whispersystems.textsecure.internal.push.PushMessageProtos.PushMessageContent.GroupContext;
 
 public class GroupUtil {
 

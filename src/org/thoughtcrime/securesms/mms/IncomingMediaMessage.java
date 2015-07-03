@@ -80,7 +80,7 @@ public class IncomingMediaMessage {
             media.setName(Util.toIsoBytes(relay.get()));
           }
 
-          media.setInProgress(true);
+          media.setPendingPush(true);
 
           this.body.addPart(media);
         }

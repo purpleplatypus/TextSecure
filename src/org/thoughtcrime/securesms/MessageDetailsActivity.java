@@ -41,7 +41,6 @@ import org.thoughtcrime.securesms.database.SmsDatabase;
 import org.thoughtcrime.securesms.database.loaders.MessageDetailsLoader;
 import org.thoughtcrime.securesms.database.model.MessageRecord;
 import org.thoughtcrime.securesms.recipients.Recipient;
-import org.thoughtcrime.securesms.recipients.RecipientFactory;
 import org.thoughtcrime.securesms.recipients.Recipients;
 import org.thoughtcrime.securesms.util.DateUtils;
 import org.thoughtcrime.securesms.util.DirectoryHelper;
@@ -106,7 +105,6 @@ public class MessageDetailsActivity extends PassphraseRequiredActionBarActivity 
     super.onResume();
     dynamicTheme.onResume(this);
     dynamicLanguage.onResume(this);
-    getSupportActionBar().setTitle(R.string.AndroidManifest__message_details);
   }
 
   private void initializeResources() {
@@ -277,7 +275,7 @@ public class MessageDetailsActivity extends PassphraseRequiredActionBarActivity 
                                       .getGroupMembers(GroupUtil.getDecodedId(groupId), false);
         } catch (IOException e) {
           Log.w(TAG, e);
-         recipients = RecipientFactory.getRecipientsFor(MessageDetailsActivity.this, new LinkedList<Recipient>(), false);
+         recipients = new Recipients(new LinkedList<Recipient>());
         }
       }
 

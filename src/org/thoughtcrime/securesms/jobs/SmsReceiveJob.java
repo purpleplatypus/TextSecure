@@ -2,7 +2,6 @@ package org.thoughtcrime.securesms.jobs;
 
 import android.content.Context;
 import android.telephony.SmsMessage;
-import android.util.Log;
 import android.util.Pair;
 
 import org.thoughtcrime.securesms.ApplicationContext;
@@ -12,8 +11,6 @@ import org.thoughtcrime.securesms.database.DatabaseFactory;
 import org.thoughtcrime.securesms.database.EncryptingSmsDatabase;
 import org.thoughtcrime.securesms.notifications.MessageNotifier;
 import org.thoughtcrime.securesms.protocol.WirePrefix;
-import org.thoughtcrime.securesms.recipients.RecipientFactory;
-import org.thoughtcrime.securesms.recipients.Recipients;
 import org.thoughtcrime.securesms.service.KeyCachingService;
 import org.thoughtcrime.securesms.sms.IncomingEncryptedMessage;
 import org.thoughtcrime.securesms.sms.IncomingTextMessage;
@@ -45,11 +42,9 @@ public class SmsReceiveJob extends ContextJob {
   public void onRun() {
     Optional<IncomingTextMessage> message = assembleMessageFragments(pdus);
 
-    if (message.isPresent() && !isBlocked(message.get())) {
+    if (message.isPresent()) {
       Pair<Long, Long> messageAndThreadId = storeMessage(message.get());
       MessageNotifier.updateNotification(context, KeyCachingService.getMasterSecret(context), messageAndThreadId.second);
-    } else if (message.isPresent()) {
-      Log.w(TAG, "*** Received blocked SMS, ignoring...");
     }
   }
 
@@ -60,15 +55,6 @@ public class SmsReceiveJob extends ContextJob {
 
   @Override
   public boolean onShouldRetry(Exception exception) {
-    return false;
-  }
-
-  private boolean isBlocked(IncomingTextMessage message) {
-    if (message.getSender() != null) {
-      Recipients recipients = RecipientFactory.getRecipientsFromString(context, message.getSender(), false);
-      return recipients.isBlocked();
-    }
-
     return false;
   }
 

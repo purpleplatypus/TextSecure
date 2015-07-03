@@ -25,6 +25,7 @@ import android.widget.RelativeLayout;
 import org.thoughtcrime.securesms.components.AvatarImageView;
 import org.thoughtcrime.securesms.components.FromTextView;
 import org.thoughtcrime.securesms.database.model.ThreadRecord;
+import org.thoughtcrime.securesms.recipients.Recipient;
 import org.thoughtcrime.securesms.recipients.Recipients;
 
 /**
@@ -33,7 +34,7 @@ import org.thoughtcrime.securesms.recipients.Recipients;
  * @author Jake McGinty
  */
 public class ShareListItem extends RelativeLayout
-                        implements Recipients.RecipientsModifiedListener
+                        implements Recipient.RecipientModifiedListener
 {
   private final static String TAG = ShareListItem.class.getSimpleName();
 
@@ -72,7 +73,7 @@ public class ShareListItem extends RelativeLayout
     this.fromView.setText(recipients);
 
     setBackground();
-    this.contactPhotoImage.setAvatar(this.recipients, false);
+    this.contactPhotoImage.setAvatar(this.recipients.getPrimaryRecipient(), false);
   }
 
   public void unbind() {
@@ -101,12 +102,12 @@ public class ShareListItem extends RelativeLayout
   }
 
   @Override
-  public void onModified(final Recipients recipients) {
+  public void onModified(Recipient recipient) {
     handler.post(new Runnable() {
       @Override
       public void run() {
         fromView.setText(recipients);
-        contactPhotoImage.setAvatar(recipients, false);
+        contactPhotoImage.setAvatar(recipients.getPrimaryRecipient(), false);
       }
     });
   }

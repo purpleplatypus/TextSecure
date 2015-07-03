@@ -4,11 +4,9 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
-import android.support.annotation.Nullable;
 import android.text.SpannableStringBuilder;
 
 import org.thoughtcrime.securesms.ConversationActivity;
-import org.thoughtcrime.securesms.ConversationPopupActivity;
 import org.thoughtcrime.securesms.recipients.Recipient;
 import org.thoughtcrime.securesms.recipients.Recipients;
 import org.thoughtcrime.securesms.util.Util;
@@ -34,10 +32,6 @@ public class NotificationItem {
     this.image               = image;
     this.threadId            = threadId;
     this.timestamp           = timestamp;
-  }
-
-  public @Nullable Recipients getRecipients() {
-    return threadRecipients;
   }
 
   public Recipient getIndividualRecipient() {
@@ -82,7 +76,8 @@ public class NotificationItem {
   }
 
   public PendingIntent getPendingIntent(Context context) {
-    Intent     intent           = new Intent(context, ConversationActivity.class);
+    Intent intent = new Intent(context, ConversationActivity.class);
+
     Recipients notifyRecipients = threadRecipients != null ? threadRecipients : recipients;
     if (notifyRecipients != null) intent.putExtra("recipients", notifyRecipients.getIds());
 
@@ -91,17 +86,5 @@ public class NotificationItem {
 
     return PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
   }
-
-  public PendingIntent getReplyIntent(Context context) {
-    Intent     intent           = new Intent(context, ConversationPopupActivity.class);
-    Recipients notifyRecipients = threadRecipients != null ? threadRecipients : recipients;
-    if (notifyRecipients != null) intent.putExtra(ConversationActivity.RECIPIENTS_EXTRA, notifyRecipients.getIds());
-
-    intent.putExtra(ConversationActivity.THREAD_ID_EXTRA, threadId);
-    intent.setData((Uri.parse("custom://"+System.currentTimeMillis())));
-
-    return PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-  }
-
 
 }

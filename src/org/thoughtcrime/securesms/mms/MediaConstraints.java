@@ -21,8 +21,8 @@ public abstract class MediaConstraints {
   public static MediaConstraints MMS_CONSTRAINTS  = new MmsMediaConstraints();
   public static MediaConstraints PUSH_CONSTRAINTS = new PushMediaConstraints();
 
-  public abstract int getImageMaxWidth(Context context);
-  public abstract int getImageMaxHeight(Context context);
+  public abstract int getImageMaxWidth();
+  public abstract int getImageMaxHeight();
   public abstract int getImageMaxSize();
 
   public abstract int getVideoMaxSize();
@@ -44,8 +44,8 @@ public abstract class MediaConstraints {
   public boolean isWithinBounds(Context context, MasterSecret masterSecret, Uri uri) throws IOException {
     InputStream is = PartAuthority.getPartStream(context, masterSecret, uri);
     Pair<Integer, Integer> dimensions = BitmapUtil.getDimensions(is);
-    return dimensions.first  > 0 && dimensions.first  <= getImageMaxWidth(context) &&
-           dimensions.second > 0 && dimensions.second <= getImageMaxHeight(context);
+    return dimensions.first  > 0 && dimensions.first  <= getImageMaxWidth() &&
+           dimensions.second > 0 && dimensions.second <= getImageMaxHeight();
   }
 
   public boolean canResize(PduPart part) {
@@ -61,8 +61,8 @@ public abstract class MediaConstraints {
 
     try {
       return BitmapUtil.createScaledBytes(context, masterSecret, part.getDataUri(),
-                                          getImageMaxWidth(context),
-                                          getImageMaxHeight(context),
+                                          getImageMaxWidth(),
+                                          getImageMaxHeight(),
                                           getImageMaxSize());
     } catch (BitmapDecodingException bde) {
       throw new IOException(bde);

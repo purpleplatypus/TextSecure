@@ -65,8 +65,7 @@ public class SlideDeck {
     PduBody body = new PduBody();
 
     for (Slide slide : slides) {
-      PduPart part = slide.getPart();
-      body.addPart(part);
+      body.addPart(slide.getPart());
     }
 
     return body;

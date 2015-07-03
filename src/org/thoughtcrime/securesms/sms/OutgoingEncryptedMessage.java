@@ -9,6 +9,10 @@ public class OutgoingEncryptedMessage extends OutgoingTextMessage {
     super(recipients, body);
   }
 
+  public OutgoingEncryptedMessage(Recipient recipient, String body) {
+    super(recipient, body);
+  }
+
   private OutgoingEncryptedMessage(OutgoingEncryptedMessage base, String body) {
     super(base, body);
   }

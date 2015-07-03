@@ -145,7 +145,7 @@ public class MmsAddressDatabase extends Database {
       }
     }
 
-    return RecipientFactory.getRecipientsFor(context, results, false);
+    return new Recipients(results);
   }
 
 

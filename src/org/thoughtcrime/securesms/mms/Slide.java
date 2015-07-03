@@ -21,6 +21,7 @@ import android.content.res.Resources.Theme;
 import android.net.Uri;
 import android.support.annotation.DrawableRes;
 import android.support.annotation.NonNull;
+import android.util.Log;
 
 import org.thoughtcrime.securesms.crypto.MasterSecret;
 import org.thoughtcrime.securesms.util.Util;
@@ -74,10 +75,6 @@ public abstract class Slide {
     return null;
   }
 
-  public boolean isInProgress() {
-    return part.isInProgress();
-  }
-
   public @DrawableRes int getPlaceholderRes(Theme theme) {
     throw new AssertionError("getPlaceholderRes() called for non-drawable slide");
   }
@@ -111,7 +108,6 @@ public abstract class Slide {
            this.hasImage() == that.hasImage()                        &&
            this.hasVideo() == that.hasVideo()                        &&
            this.isDraft() == that.isDraft()                          &&
-           this.isInProgress() == that.isInProgress()                &&
            Util.equals(this.getUri(), that.getUri())                 &&
            Util.equals(this.getThumbnailUri(), that.getThumbnailUri());
   }
