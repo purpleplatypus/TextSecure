@@ -17,7 +17,6 @@
 package org.thoughtcrime.securesms;
 
 import android.content.Context;
-import android.content.res.TypedArray;
 import android.graphics.Typeface;
 import android.os.Handler;
 import android.util.AttributeSet;
@@ -28,7 +27,6 @@ import android.widget.TextView;
 import org.thoughtcrime.securesms.components.AvatarImageView;
 import org.thoughtcrime.securesms.components.FromTextView;
 import org.thoughtcrime.securesms.database.model.ThreadRecord;
-import org.thoughtcrime.securesms.recipients.Recipient;
 import org.thoughtcrime.securesms.recipients.Recipients;
 import org.thoughtcrime.securesms.util.DateUtils;
 
@@ -45,7 +43,7 @@ import static org.thoughtcrime.securesms.util.SpanUtil.color;
  */
 
 public class ConversationListItem extends RelativeLayout
-                                  implements Recipient.RecipientModifiedListener
+                                  implements Recipients.RecipientsModifiedListener
 {
   private final static String TAG = ConversationListItem.class.getSimpleName();
 
@@ -77,12 +75,11 @@ public class ConversationListItem extends RelativeLayout
 
   @Override
   protected void onFinishInflate() {
+    super.onFinishInflate();
     this.subjectView       = (TextView) findViewById(R.id.subject);
     this.fromView          = (FromTextView) findViewById(R.id.from);
     this.dateView          = (TextView) findViewById(R.id.date);
     this.contactPhotoImage = (AvatarImageView) findViewById(R.id.contact_photo_image);
-
-    initializeContactWidgetVisibility();
   }
 
   public void set(ThreadRecord thread, Locale locale, Set<Long> selectedThreads, boolean batchMode) {
@@ -104,8 +101,8 @@ public class ConversationListItem extends RelativeLayout
       dateView.setTypeface(read ? LIGHT_TYPEFACE : BOLD_TYPEFACE);
     }
 
-    setBackground(read, batchMode);
-    this.contactPhotoImage.setAvatar(recipients.getPrimaryRecipient(), true);
+    setBatchState(batchMode);
+    this.contactPhotoImage.setAvatar(recipients, true);
   }
 
   public void unbind() {
@@ -113,26 +110,8 @@ public class ConversationListItem extends RelativeLayout
       this.recipients.removeListener(this);
   }
 
-  private void initializeContactWidgetVisibility() {
-    contactPhotoImage.setVisibility(View.VISIBLE);
-  }
-
-  private void setBackground(boolean read, boolean batch) {
-    int[]      attributes = new int[]{R.attr.conversation_list_item_background_selected,
-                                      R.attr.conversation_list_item_background_read,
-                                      R.attr.conversation_list_item_background_unread};
-
-    TypedArray drawables  = context.obtainStyledAttributes(attributes);
-
-    if (batch && selectedThreads.contains(threadId)) {
-      setBackgroundDrawable(drawables.getDrawable(0));
-    } else if (read) {
-      setBackgroundDrawable(drawables.getDrawable(1));
-    } else {
-      setBackgroundDrawable(drawables.getDrawable(2));
-    }
-
-    drawables.recycle();
+  private void setBatchState(boolean batch) {
+    setSelected(batch && selectedThreads.contains(threadId));
   }
 
   public Recipients getRecipients() {
@@ -148,12 +127,12 @@ public class ConversationListItem extends RelativeLayout
   }
 
   @Override
-  public void onModified(Recipient recipient) {
+  public void onModified(final Recipients recipients) {
     handler.post(new Runnable() {
       @Override
       public void run() {
         fromView.setText(recipients, read);
-        contactPhotoImage.setAvatar(recipients.getPrimaryRecipient(), true);
+        contactPhotoImage.setAvatar(recipients, true);
       }
     });
   }
